@@ -13,5 +13,5 @@ return [
     'PRT' => 'Portugal',
     'PRI' => 'Puerto Rico',
     'USA' => 'Estados Unidos',
-    'VEN' => 'Venezuela'
+    'VEN' => 'Venezuela',
 ];

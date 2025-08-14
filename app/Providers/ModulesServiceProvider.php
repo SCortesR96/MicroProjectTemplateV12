@@ -4,7 +4,6 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 
-
 class ModulesServiceProvider extends ServiceProvider
 {
     /**

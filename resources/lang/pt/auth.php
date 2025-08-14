@@ -17,7 +17,7 @@ return [
     'password' => 'A senha fornecida está incorreta.',
     'throttle' => 'Muitos tentativas de login. Por favor, tente novamente em :seconds segundos.',
     'permission' => [
-        'notPermission' => 'Você não tem as permissões necessárias.'
+        'notPermission' => 'Você não tem as permissões necessárias.',
     ],
 
 ];
