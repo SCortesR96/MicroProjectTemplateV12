@@ -66,8 +66,8 @@
             "@php artisan test"
         ],
         "pre-commit": [
-            "@pint",
-            "@phpstan analyse --memory-limit=2G"
+            "vendor/bin/pint",
+            "@php ./vendor/bin/phpstan analyse --memory-limit=2G"
         ],
         "pint": "vendor/bin/pint"
     },
