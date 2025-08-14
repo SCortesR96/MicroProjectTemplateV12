@@ -15,59 +15,84 @@ class JwtMiddleware
 {
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
-        $token = $request->header('Authorization');
-
-        if (! $token) {
+        $token = $this->extractToken($request);
+        if (!$token) {
             return $this->unauthorized('Token not provided');
         }
 
-        // Limpia el prefijo Bearer
-        $token = str_replace('Bearer ', '', $token);
+        $payload = $this->getCachedOrDecodedPayload($token);
+        if (!$payload) {
+            return $this->unauthorized('Invalid token');
+        }
 
-        // Revisa si ya está en caché
-        $cacheKey = 'jwt_validated:'.md5($token);
+        if (!$this->isTokenTimeValid($payload)) {
+            return $this->unauthorized('Token not yet valid or expired');
+        }
+
+        if (!$this->isRoleAllowed($roles, $payload)) {
+            return response()->json(
+                ['error' => 'Forbidden'],
+                JsonResponse::HTTP_FORBIDDEN
+            );
+        }
+
+        $request->attributes->set('jwt_payload', $payload);
+
+        return $next($request);
+    }
+
+    private function extractToken(Request $request): ?string
+    {
+        $token = $request->header('Authorization');
+        return $token ? str_replace('Bearer ', '', $token) : null;
+    }
+
+    private function getCachedOrDecodedPayload(string $token): ?object
+    {
+        $cacheKey = 'jwt_validated:' . md5($token);
         $payload = Cache::get($cacheKey);
 
-        if (! $payload) {
+        if (!$payload) {
             try {
                 $payload = JWT::decode($token, new Key(
                     config('environment.jwt.secret'),
                     config('environment.jwt.algorithm')
                 ));
 
-                // Validar exp (expiración)
-                if (isset($payload->exp) && $payload->exp < time()) {
-                    return $this->unauthorized('Token has expired');
-                }
-
-                // Validar nbf (not before)
-                if (isset($payload->nbf) && $payload->nbf > time()) {
-                    return $this->unauthorized('Token not yet valid');
-                }
-
-                // Guardar en caché por 1 minuto (o menos que la expiración)
                 $ttl = isset($payload->exp) ? max(0, $payload->exp - time()) : 60;
                 Cache::put($cacheKey, $payload, min($ttl, 60));
             } catch (Exception $e) {
-                return $this->unauthorized('Invalid token: '.$e->getMessage());
+                return null;
             }
         }
 
-        // Si el middleware recibe roles, validar que el usuario los tenga
-        if (! empty($roles) && isset($payload->role)) {
-            if (! in_array($payload->role, $roles)) {
-                return response()->json(['error' => 'Forbidden'], JsonResponse::HTTP_FORBIDDEN);
-            }
+        return $payload;
+    }
+
+    private function isTokenTimeValid(object $payload): bool
+    {
+        if (isset($payload->exp) && $payload->exp < time()) {
+            return false;
         }
+        if (isset($payload->nbf) && $payload->nbf > time()) {
+            return false;
+        }
+        return true;
+    }
 
-        // Compartir el payload con el request para que el controlador lo use
-        $request->attributes->set('jwt_payload', $payload);
-
-        return $next($request);
+    private function isRoleAllowed(array $roles, object $payload): bool
+    {
+        if (count($roles) > 0 && isset($payload->role)) {
+            return in_array($payload->role, $roles);
+        }
+        return true;
     }
 
     private function unauthorized(string $message): JsonResponse
     {
-        return response()->json(['error' => $message], JsonResponse::HTTP_UNAUTHORIZED);
+        return response()->json(
+            ['error' => $message],
+            JsonResponse::HTTP_UNAUTHORIZED
+        );
     }
 }
