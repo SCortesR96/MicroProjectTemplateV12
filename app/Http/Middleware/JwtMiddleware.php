@@ -16,20 +16,20 @@ class JwtMiddleware
     public function handle(Request $request, Closure $next, ...$roles): Response
     {
         $token = $this->extractToken($request);
-        if (!$token) {
+        if (! $token) {
             return $this->unauthorized('Token not provided');
         }
 
         $payload = $this->getCachedOrDecodedPayload($token);
-        if (!$payload) {
+        if (! $payload) {
             return $this->unauthorized('Invalid token');
         }
 
-        if (!$this->isTokenTimeValid($payload)) {
+        if (! $this->isTokenTimeValid($payload)) {
             return $this->unauthorized('Token not yet valid or expired');
         }
 
-        if (!$this->isRoleAllowed($roles, $payload)) {
+        if (! $this->isRoleAllowed($roles, $payload)) {
             return response()->json(
                 ['error' => 'Forbidden'],
                 JsonResponse::HTTP_FORBIDDEN
@@ -44,15 +44,16 @@ class JwtMiddleware
     private function extractToken(Request $request): ?string
     {
         $token = $request->header('Authorization');
+
         return $token ? str_replace('Bearer ', '', $token) : null;
     }
 
     private function getCachedOrDecodedPayload(string $token): ?object
     {
-        $cacheKey = 'jwt_validated:' . md5($token);
+        $cacheKey = 'jwt_validated:'.md5($token);
         $payload = Cache::get($cacheKey);
 
-        if (!$payload) {
+        if (! $payload) {
             try {
                 $payload = JWT::decode($token, new Key(
                     config('environment.jwt.secret'),
@@ -77,6 +78,7 @@ class JwtMiddleware
         if (isset($payload->nbf) && $payload->nbf > time()) {
             return false;
         }
+
         return true;
     }
 
@@ -85,6 +87,7 @@ class JwtMiddleware
         if (count($roles) > 0 && isset($payload->role)) {
             return in_array($payload->role, $roles);
         }
+
         return true;
     }
 
