@@ -2,13 +2,13 @@
 
 return [
     'address_type' => [
-        'billing'   => 'Billing',
-        'home'      => 'Home',
-        'office'    => 'Office',
-        'other'     => 'Other',
-        'shipping'  => 'Shipping',
+        'billing' => 'Billing',
+        'home' => 'Home',
+        'office' => 'Office',
+        'other' => 'Other',
+        'shipping' => 'Shipping',
         'warehouse' => 'Warehouse',
-        'work'      => 'Work',
+        'work' => 'Work',
     ],
     'road_quadrant' => [
         'n' => 'North',
